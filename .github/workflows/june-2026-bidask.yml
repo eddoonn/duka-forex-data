@@ -38,7 +38,7 @@ jobs:
 
       - name: Download and aggregate two-sided minute bars
         run: |
-          python3 scripts/download_m1_bid_ask.py EURUSD GBPUSD USDJPY USDCHF USDCAD AUDUSD NZDUSD --start 2026-05-27 --end 2026-06-30 --output datasets/dukascopy_m1_bidask_2026-06 --cache .duka-bi5-cache --workers 96 --retries 7 --timeout 30
+          python3 scripts/download_m1_bid_ask.py EURUSD GBPUSD USDJPY USDCHF USDCAD AUDUSD NZDUSD --start 2026-05-27 --end 2026-06-30 --output datasets/dukascopy_m1_bidask_2026-06 --cache .duka-bi5-cache --workers 24 --retries 7 --timeout 30
 
       - name: Validate dataset manifest
         run: |
