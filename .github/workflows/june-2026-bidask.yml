@@ -1,0 +1,63 @@
+name: Build June 2026 BID ASK validation dataset
+
+on:
+  push:
+    branches:
+      - agent/june-2026-validation-cache
+    paths:
+      - scripts/download_m1_bid_ask.py
+      - .github/workflows/june-2026-bidask.yml
+  pull_request:
+    branches:
+      - master
+    paths:
+      - scripts/download_m1_bid_ask.py
+      - .github/workflows/june-2026-bidask.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: june-2026-bidask
+  cancel-in-progress: false
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore hourly BI5 cache
+        id: restore-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .duka-bi5-cache
+          key: duka-bi5-20260527-20260630-v1
+
+      - name: Download and aggregate two-sided minute bars
+        run: |
+          python3 scripts/download_m1_bid_ask.py EURUSD GBPUSD USDJPY USDCHF USDCAD AUDUSD NZDUSD --start 2026-05-27 --end 2026-06-30 --output datasets/dukascopy_m1_bidask_2026-06 --cache .duka-bi5-cache --workers 24 --retries 7 --timeout 30
+
+      - name: Validate dataset manifest
+        run: |
+          test -s datasets/dukascopy_m1_bidask_2026-06/manifest.json
+          test "$(find datasets/dukascopy_m1_bidask_2026-06 -name '*.csv.gz' | wc -l)" -eq 7
+          python3 -m json.tool datasets/dukascopy_m1_bidask_2026-06/manifest.json >/dev/null
+
+      - name: Save hourly BI5 cache
+        if: always() && steps.restore-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .duka-bi5-cache
+          key: duka-bi5-20260527-20260630-v1
+
+      - name: Upload reusable June dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: dukascopy-m1-bidask-2026-06
+          path: datasets/dukascopy_m1_bidask_2026-06
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
