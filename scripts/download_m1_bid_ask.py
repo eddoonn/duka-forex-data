@@ -13,6 +13,7 @@ import argparse
 import csv
 import gzip
 import hashlib
+import http.client
 import json
 import lzma
 import os
@@ -104,7 +105,7 @@ def fetch(job: Job, cache_dir: Path, retries: int, timeout: int) -> tuple[Job, P
                 target.write_bytes(b"")
                 return job, target, "empty"
             last_error = error
-        except (OSError, urllib.error.URLError) as error:
+        except (OSError, urllib.error.URLError, http.client.HTTPException) as error:
             last_error = error
         time.sleep(min(8, 0.5 * (2**attempt)))
     raise RuntimeError(f"Failed {job.url}: {last_error}")
